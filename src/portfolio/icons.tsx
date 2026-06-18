@@ -33,7 +33,14 @@ export function UploadIcon({ size = 23, className }: IconProps) {
 export function MoonIcon({ size = 16, className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} className={className} aria-hidden="true">
-      <path d="M20 14.2A8 8 0 1 1 9.8 4 6.4 6.4 0 0 0 20 14.2Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      {/* plump rounded crescent */}
+      <path
+        d="M20 14.6A7.5 7.5 0 1 1 10.4 5a5.8 5.8 0 0 0 9.6 9.6Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
