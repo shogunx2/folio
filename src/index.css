@@ -1,21 +1,65 @@
+/* Folio design tokens — high-contrast editorial finance.
+   Light is the default; dark activates via data-theme="dark" on <html>. */
 :root {
-  --bg: #0d0d0d;
-  --surface: #141414;
-  --card-soft: #141414;
-  --border: #222;
-  --text-h: #f0f0f0;
-  --text: #ccc;
-  --muted: #555;
-  --accent: #85b7eb;
-  --green: #1d9e75;
-  --red: #d85a30;
-  color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --bg: #ffffff;
+  --page: #ffffff;
+  --ink: #07070a;
+  --muted: #5c5c66;
+  --muted2: #6e6e78;
+  --muted3: #4a4a54;
+  --legend: #1a1a22;
+  --hair: #e4e4ea;
+  --surface: #ffffff;
+  --paper: #ffffff;
+  --track: #eaeaf0;
+  --funds: #07070a;
+  --dash: #c9c9d2;
+  --handle: #c9c9d2;
+  --navGlass: rgba(255, 255, 255, 0.7);
+  --navGlassSolid: #ffffff;
+  --navPill: #07070a;
+  --navHi: rgba(255, 255, 255, 0.9);
+  --navEdge: rgba(0, 0, 0, 0.1);
+  --navSpec: rgba(255, 255, 255, 0.6);
+  --navWarm: rgba(0, 0, 0, 0.06);
+  --scrim: rgba(7, 7, 10, 0.55);
+  --shadow: rgba(7, 7, 10, 0.28);
+
+  color-scheme: light;
+  font-family: 'Hanken Grotesk', ui-sans-serif, system-ui, -apple-system, sans-serif;
   line-height: 1.4;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  --bg: #050507;
+  --page: #050507;
+  --ink: #f7f7fa;
+  --muted: #8a8a96;
+  --muted2: #9a9aa6;
+  --muted3: #b4b4c0;
+  --legend: #d6d6de;
+  --hair: #1e1e26;
+  --surface: #101015;
+  --paper: #0b0b10;
+  --track: #18181f;
+  --funds: #f7f7fa;
+  --dash: #2a2a33;
+  --handle: #2a2a33;
+  --navGlass: rgba(16, 16, 21, 0.66);
+  --navGlassSolid: #101015;
+  --navPill: #f7f7fa;
+  --navHi: rgba(255, 255, 255, 0.16);
+  --navEdge: rgba(255, 255, 255, 0.12);
+  --navSpec: rgba(255, 255, 255, 0.12);
+  --navWarm: rgba(0, 0, 0, 0.3);
+  --scrim: rgba(0, 0, 0, 0.7);
+  --shadow: rgba(0, 0, 0, 0.7);
+
+  color-scheme: dark;
 }
 
 * {
@@ -32,6 +76,7 @@ body,
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--page);
+  color: var(--ink);
+  transition: background 0.35s ease;
 }
