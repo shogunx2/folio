@@ -25,3 +25,7 @@ dist-ssr
 
 # Python venv
 .venv
+
+# Internal notes / planning docs — keep the repo to code + README
+*.md
+!README.md

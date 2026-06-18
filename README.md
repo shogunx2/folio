@@ -1,73 +1,50 @@
-# React + TypeScript + Vite
+# Folio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mobile-first personal investment tracker. Import your broker statements and see
+your net worth, allocation, and returns in one clean view — all stored locally on
+your device.
 
-Currently, two official plugins are available:
+Built with React + TypeScript + Vite, installable as a PWA, and designed around an
+editorial-finance aesthetic (serif numerals, mono tickers, hairline depth, emerald
+accent, light/dark).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Statement import** — Groww, Zerodha, and MF Central CSV/XLSX, parsed entirely
+  client-side.
+- **Portfolio overview** — net worth, invested capital, asset allocation, and XIRR.
+- **Holdings & activity** — per-holding detail with price charts and transaction
+  history.
+- **Local-first & private** — holdings and transactions live in your browser
+  (IndexedDB); nothing is sent to a server.
+- **Installable PWA** — add to your home screen on iOS or Android; the app shell
+  works offline.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # start the dev server
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open the printed local URL.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+| Command           | Description                          |
+| ----------------- | ------------------------------------ |
+| `npm run dev`     | Start the Vite dev server with HMR   |
+| `npm run build`   | Type-check and build for production  |
+| `npm run preview` | Serve the production build locally   |
+| `npm run lint`    | Run ESLint                           |
+| `npm test`        | Run the test suite (Vitest)          |
+
+## Tech stack
+
+React 19 · TypeScript · Vite · IndexedDB (`idb`) · Recharts · vite-plugin-pwa
+
+## Notes
+
+Price refresh currently relies on dev-only Vite proxies (Yahoo / AMFI), so live
+quotes do not update in a deployed build — values are shown from the last import.
+A small end-of-day price backend is planned.
