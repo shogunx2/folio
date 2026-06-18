@@ -1,260 +1,141 @@
-# Finance Dashboard v1 — Build Plan
+# Folio — Next Build Plan (CAS parsing + PWA)
 
-## What we're building
+> Start-here plan for a fresh session. The original v1 plan is preserved at `plan-v1.md`.
 
-A personal investment dashboard for tracking stocks and mutual funds across Zerodha, Groww, and MF Central. Local-only, no backend, React + TypeScript, Capacitor-ready for iOS later.
+## Context & current state
 
----
+Folio is a mobile-first personal investment tracker (React + TypeScript + Vite), already
+redesigned to a clean "editorial finance" aesthetic (serif numerals, mono tickers,
+hairline depth, emerald accent, light/dark, liquid-glass tab bar). It currently:
+- Imports **broker statements** (Groww / Zerodha / MF Central CSV/XLSX), parsed client-side.
+- Stores holdings/transactions in **IndexedDB** (local-only, no backend).
+- Computes net worth, allocation, XIRR; shows holdings, activity, per-holding detail with charts.
+- Fetches prices via **dev-only Vite proxies** (Yahoo/AMFI) — these do NOT work in a
+  deployed build (browsers can't call them directly).
 
-## Tech stack
+**Immediate goal:** ship to my own household (my dad + family) with near-zero cost, built
+so it can go public later **without a rewrite**.
 
+## Locked decisions (do NOT re-litigate)
 
-| Layer          | Choice                         |
-| -------------- | ------------------------------ |
-| Framework      | React 18 + TypeScript          |
-| Build tool     | Vite                           |
-| Styling        | Tailwind CSS                   |
-| Charts         | Recharts                       |
-| Storage        | IndexedDB (via `idb` wrapper)  |
-| CSV parsing    | PapaParse                      |
-| Live prices    | AngelOne WebSocket             |
-| MF NAV         | AMFI daily feed (free, public) |
-| Mobile (later) | Capacitor                      |
+- **CAS parsing is server-side.** Client-side (Pyodide) was tested and rejected: current
+  `casparser` 1.x needs native `pypdfium2` (no WASM build); the older pdfminer-based 0.9.1
+  works only by stubbing native `rapidfuzz` — too fragile/unmaintainable.
+- **CAS import is ADDITIVE.** Do **NOT** remove or change the existing Groww/Zerodha/
+  MF Central importers until CAS parsing is proven reliable on real statements.
+- **Do NOT build login/auth.** The login UI is being designed separately in Claude Designs
+  and will be brought in later. Leave a clean seam where it will plug in. (When it lands it
+  will be **mandatory** login, because the cloud/sync path stores data server-side.)
+- **PWA-first delivery.** Installable on iOS + Android home screen via a free HTTPS host
+  (Cloudflare Pages / Vercel). No app stores needed for household use. (App Store/Play via
+  Capacitor is a later, optional step — same codebase.)
+- **EOD price freshness is enough** (daily close). Live/intraday not needed.
+- **Data minimization (security):** discard the CAS PDF immediately after parsing; never
+  store PAN/DOB (the CAS password); when cloud storage is added, store only **encrypted
+  derived holdings**, never raw statements.
+- **Freemium (later, not now):** free = 1 CAS / single portfolio; paid = up to ~5 family
+  members + capital-gains/tax reports (facts/reports only — no securities advice, to avoid
+  SEBI RIA liability).
 
+## Build tracks (do Track A first)
 
----
+### Track A — Make Folio an installable PWA (low risk, immediate household value)
 
-## Project structure
+1. **Web manifest** (`public/manifest.webmanifest`): name "Folio", short_name, theme/
+   background colors (match light/dark tokens), `display: standalone`, `start_url: /`,
+   `scope: /`, icons.
+2. **Icons**: 192/512 PNG + a 512 **maskable** icon + `apple-touch-icon` (180×180). Put in
+   `public/`. (Generate from a simple "folio" serif glyph on the accent/ink background.)
+3. **iOS home-screen meta tags** in `index.html`: `apple-mobile-web-app-capable`,
+   `apple-mobile-web-app-status-bar-style`, `apple-mobile-web-app-title`, apple-touch-icon link.
+4. **Service worker** for an offline app shell — use **`vite-plugin-pwa`** (Workbox) in
+   `vite.config.ts` (auto-update, precache the built assets). Keep it simple: app shell +
+   static assets; data stays in IndexedDB.
+5. **Verify**: Chrome Lighthouse "Installable" passes; install on a real iPhone (Safari →
+   Share → Add to Home Screen) and Android (Add to Home Screen); offline loads the shell.
+6. **Deploy**: `npm run build` → push `dist/` to **Cloudflare Pages** or **Vercel** (free)
+   → get an HTTPS subdomain (e.g. `folio.pages.dev`). Open on family phones, add to home screen.
 
-```
-src/
-├── types/
-│   └── index.ts              # Transaction, Holding, AssetType, Platform etc.
-├── parsers/
-│   ├── zerodha.ts            # Zerodha tradebook CSV parser
-│   ├── groww.ts              # Groww CSV parser (stocks + MF separate)
-│   └── mf.ts                # MF Central statement parser
-├── normalizer/
-│   └── index.ts              # Calls parsers, validates, deduplicates, stores
-├── store/
-│   └── db.ts                 # IndexedDB setup and CRUD helpers (idb)
-├── derived/
-│   ├── holdings.ts           # Derives Holdings from Transaction store
-│   └── insights.ts           # XIRR, P&L, allocation, top/worst performers
-├── prices/
-│   ├── angelone.ts           # AngelOne WebSocket client (live stock prices)
-│   └── amfi.ts               # AMFI NAV fetcher (daily, for MF)
-├── components/
-│   ├── layout/
-│   │   ├── Sidebar.tsx
-│   │   └── Header.tsx
-│   ├── overview/
-│   │   ├── NetWorthCard.tsx
-│   │   ├── PnLCard.tsx
-│   │   ├── AllocationChart.tsx
-│   │   └── XIRRCard.tsx
-│   ├── stocks/
-│   │   ├── StockTable.tsx
-│   │   └── StockDetail.tsx
-│   ├── mutualfunds/
-│   │   ├── MFTable.tsx
-│   │   └── MFDetail.tsx
-│   ├── transactions/
-│   │   └── TransactionList.tsx
-│   └── import/
-│       ├── ImportScreen.tsx
-│       └── CSVDropzone.tsx
-├── pages/
-│   ├── Overview.tsx
-│   ├── Stocks.tsx
-│   ├── MutualFunds.tsx
-│   ├── Transactions.tsx
-│   └── Import.tsx
-├── hooks/
-│   ├── useHoldings.ts        # Reads holdings from IndexedDB
-│   ├── useLivePrices.ts      # Subscribes to AngelOne WebSocket
-│   └── useInsights.ts        # Computes derived metrics
-└── App.tsx
-```
+Critical files: `index.html`, `vite.config.ts`, new `public/manifest.webmanifest`, new
+`public/` icons.
 
----
+> NOTE: Prices currently rely on dev-only proxies and will not refresh in the deployed PWA.
+> For the first household deploy that's acceptable (values show from last import). A small
+> EOD price backend is the parked follow-up (see below). Don't block Track A on it.
 
-## Data model
+### Track B — CAS parsing service (THE core challenge; additive, feature-flagged)
 
-### Transaction (immutable ledger)
+My dad tried to use a CAS and couldn't — so **two things must work: (1) obtaining the CAS,
+(2) parsing it.** Treat both as part of this track.
 
-```ts
-interface Transaction {
-  id: string;           // SHA-256 hash for deduplication
-  platform: 'zerodha' | 'groww' | 'mf_central';
-  asset_type: 'equity' | 'mutual_fund' | 'etf';
-  isin: string;
-  symbol: string;
-  name: string;
-  txn_type: 'buy' | 'sell' | 'sip' | 'dividend' | 'switch_in' | 'switch_out' | 'redemption';
-  date: string;         // ISO 8601
-  units: number;
-  price: number;
-  amount: number;
-  charges: number;
-  net_amount: number;
-  raw: Record<string, string>;
-}
-```
+**Step 0 — Get a real CAS and find out what failed.** Document how to obtain each type and
+test against real files:
+- **CAMS/KFintech consolidated CAS** (mutual funds only): camsonline.com or mfcentral.com →
+  "Consolidated Account Statement" → emailed PDF, password is usually the **PAN (uppercase)**
+  or a user-set password.
+- **NSDL / CDSL CAS** (demat **+** MF — most complete, one file = whole portfolio):
+  NSDL e-CAS (nsdl.co.in) / CDSL (cdslindia.com) → register → emailed monthly; password = PAN.
+- Find out which type my dad has and why it failed (wrong CAS type? password format? OTP/
+  portal confusion? summary vs detailed statement?). If *generating* the CAS is the hard
+  part, that's a product/UX note to capture, not just an engineering one.
 
-### Holding (derived, recomputed on demand)
+**Step 1 — Parsing service (server-side Python).**
+- Use **current `casparser` (1.x)** — supports CAMS/KFintech + NSDL/CDSL, multiple asset classes.
+- Run as a **Python AWS Lambda (container image)** with a Function URL (the container bundles
+  the native `pypdfium2`), or a small **FastAPI** service if a container is easier locally.
+  Prefer Lambda for low-ops + free tier.
+- Endpoint: `POST /parse-cas` (multipart: `file` = PDF, `password`) → returns structured
+  JSON. **Parse-and-discard**: never persist the PDF or password. CORS enabled for the app.
+- Reliability checklist: both CAS variants; wrong/empty password; encrypted PDFs; zero-holding
+  statements; summary (holdings only) vs detailed (with transactions); unknown schemes.
 
-```ts
-interface Holding {
-  isin: string;
-  symbol: string;
-  name: string;
-  asset_type: 'equity' | 'mutual_fund' | 'etf';
-  platforms: string[];
-  units_held: number;
-  avg_cost: number;
-  invested_amount: number;
-  current_price: number;    // from AngelOne or AMFI
-  current_value: number;
-  unrealised_pnl: number;
-  unrealised_pnl_pct: number;
-  ltcg_units: number;       // held > 1 year
-  stcg_units: number;
-}
-```
+**Step 2 — Wire into the existing app (additive).**
+- Add an **"Import CAS"** affordance in the existing Import view
+  (`src/portfolio/MobileApp.tsx` → `ImportView`, alongside the broker source rows) that
+  uploads PDF + password to `/parse-cas`.
+- Add a CAS import action to the view-model hook (`src/portfolio/usePortfolio.ts`), mirroring
+  the existing `importFile` flow.
+- **Adapter**: map `casparser` output (folios/schemes/transactions + demat holdings) →
+  existing internal `Transaction` / `Holding` types → run through the existing
+  **`src/normalizer/`** pipeline (reuse its validation + dedup + storage). Do not duplicate
+  that logic.
+- Put the whole CAS path behind a **feature flag** so broker import is untouched.
 
----
+**Step 3 — Prove reliability before promoting.** Validate on multiple real CAS files; confirm
+the numbers reconcile with broker-import figures for overlapping holdings. Only after that,
+consider making CAS the primary onboarding path. **Until then, keep broker import as-is.**
 
-## Features — v1 scope
+## Explicit DO-NOTs
+- ❌ Don't remove/modify Groww/Zerodha/MF Central import until CAS is reliable.
+- ❌ Don't build the login/auth UI (coming from Claude Designs) — just leave a seam.
+- ❌ Don't store the CAS PDF or the PAN/DOB anywhere.
 
-### Import screen
+## Existing code to reuse
+- `src/normalizer/index.ts` — validation/dedup/storage pipeline (feed CAS results through it).
+- `src/parsers/*` — pattern for parser → normalizer.
+- `src/types/index.ts` — `Transaction`, `Holding`, `AssetType`, `Platform`.
+- `src/services/portfolio.ts` — `getPortfolioSnapshot`, import pipeline, `refreshQuotes`.
+- `src/portfolio/usePortfolio.ts` — view-model hook (add CAS import action here).
+- `src/portfolio/MobileApp.tsx` (`ImportView`) — add CAS upload UI beside broker chips.
+- `src/prices/amfi.ts` + `src/services/nseIsinMap.ts` — reuse for the parked EOD price backend.
 
-- Drag and drop CSV upload
-- Platform selector (Zerodha / Groww / MF Central)
-- Preview parsed rows before confirming import
-- Deduplication on re-import (safe to re-upload same file)
-- Import error reporting (malformed rows highlighted)
+## Parked for later (paid scaffolding / when it earns its keep)
+- **EOD price backend** (so prices refresh in prod + scale): daily ingest of NSE bhavcopy +
+  AMFI NAVAll into a cache, served to all clients — fetch volume independent of user count.
+- **Mandatory login + cloud sync** (Cognito + per-user encrypted store) — UI from Claude Designs.
+- **Tax / capital-gains reports** (paid). **Family members** up to ~5 (paid).
+- **App Store / Play Store** via Capacitor (Play ₹2,100 one-time; Apple ₹8,400/yr; both later).
 
-### Overview page
+## Cost reference
+- **Household now:** ~₹0 (PWA + free hosting; optional domain ~₹900/yr).
+- **Public later:** Play ₹2,100 one-time, Apple ₹8,400/yr, domain ₹900/yr; AWS near-free at
+  small scale (always-free Lambda/DynamoDB, Cognito free to 10k users).
+- **Security upfront:** ~₹0 — use built-in HTTPS + encryption-at-rest + data minimization.
+  Pentest (~₹50k+) and legal review only when scaling / going seriously public, not now.
 
-- Total current value (net worth)
-- Total invested amount
-- Overall P&L — absolute (₹) and percentage
-- XIRR — annualised return across all holdings
-- Allocation donut chart — equity vs mutual fund
-- Top 3 gainers, top 3 losers
-
-### Stocks page
-
-- Holdings table: name, units, avg cost, LTP, current value, P&L%, day change%
-- Sector allocation chart
-- Sortable and searchable
-
-### Mutual Funds page
-
-- Holdings table: scheme name, units, avg NAV, current NAV, current value, XIRR
-- Fund category breakdown (large cap / mid cap / sectoral etc.)
-- SIP vs lump sum split (derived from txn_type)
-
-### Transactions page
-
-- Full transaction history across all platforms
-- Filter by platform, asset type, date range
-- Search by name or ISIN
-
----
-
-## Normalizer logic
-
-```
-Raw CSV row
-  → platform parser (zerodha / groww / cas)
-  → validate (required fields, number parsing, date parsing)
-  → enrich (ISIN lookup if missing, name normalisation)
-  → dedup check (hash exists in IndexedDB? skip)
-  → write to IndexedDB transactions store
-  → recompute holdings view
-```
-
-Dedup key: `platform + isin + date + units + txn_type`
-
----
-
-## Live prices
-
-### Stocks — AngelOne WebSocket
-
-- On app load, collect all unique NSE symbols from holdings
-- Subscribe to LTP feed for those scrips
-- On price tick, update holdings in memory (not persisted — re-fetched on next load)
-- Show last updated timestamp
-
-### Mutual Funds — AMFI
-
-- Fetch `https://www.amfiindia.com/spages/NAVAll.txt` once daily
-- Parse: scheme code → NAV mapping
-- Match against holdings by ISIN or scheme code
-- Cache in IndexedDB with date key, refresh if stale
-
----
-
-## Insights calculations
-
-
-| Metric       | Method                                                                       |
-| ------------ | ---------------------------------------------------------------------------- |
-| P&L          | `current_value - invested_amount`                                            |
-| P&L %        | `(P&L / invested_amount) × 100`                                              |
-| XIRR         | Newton-Raphson on dated cashflows (buy = negative, current value = positive) |
-| Avg cost     | `total_net_invested / units_held` (weighted, includes charges)               |
-| LTCG units   | Transactions where `date < today - 1 year` (equity)                          |
-| Allocation % | `asset_value / total_value × 100`                                            |
-
-
-Use the `xirr` npm package or implement Newton-Raphson directly — it's ~30 lines.
-
----
-
-## Cursor instructions
-
-Do one step, verify it works, then move to the next.
-
-1. **Scaffold** — `npm create vite@latest . -- --template react-ts`, install deps (`idb`, `papaparse`, `recharts`, `tailwindcss`)
-2. **Types** — create `src/types/index.ts` with Transaction and Holding interfaces
-3. **IndexedDB store** — create `src/store/db.ts` with `addTransactions`, `getAllTransactions`, `clearAll`
-4. **Parsers** — implement `zerodha.ts`, `groww.ts`, `mf.ts` one at a time, test each with a real sample CSV row
-5. **Normalizer** — wire parsers into `src/normalizer/index.ts`, add validation + dedup
-6. **Holdings derivation** — implement `src/derived/holdings.ts`
-7. **AMFI NAV fetcher** — implement `src/prices/amfi.ts`
-8. **AngelOne WebSocket** — implement `src/prices/angelone.ts`
-9. **Insights** — implement XIRR and other metrics in `src/derived/insights.ts`
-10. **Import UI** — build `ImportScreen.tsx` with CSV dropzone and preview table
-11. **Overview page** — net worth, P&L, XIRR, allocation chart
-12. **Stocks page** — holdings table with live prices
-13. **MF page** — holdings table with AMFI NAV
-14. **Transactions page** — filterable history
-15. **Routing + layout** — wire up pages with sidebar nav
-
----
-
-## Out of scope for v1
-
-- FDs, PPF, gold, bank accounts
-- Backend / cloud sync
-- Authentication
-- Notifications / alerts
-- Benchmark comparison (Nifty 50)
-- SIP calendar
-- Goals tracking
-
----
-
-## Notes for Cursor
-
-- Always use `idb` for IndexedDB, never raw `indexedDB` API
-- All money values in INR, stored as numbers (not strings)
-- Dates always stored as ISO 8601 strings (`YYYY-MM-DD`)
-- Holdings are never stored — always recomputed from transactions
-- AngelOne WebSocket credentials should go in a `.env` file (`VITE_ANGELONE_TOKEN`)
-- Do not use `any` type — keep TypeScript strict
-
+## Verification
+- **Track A:** Lighthouse PWA "installable" passes; installs on a real iPhone + Android;
+  offline shell loads; deployed HTTPS URL works on family phones.
+- **Track B:** real CAS (both types if available) parses to correct holdings/transactions;
+  reconciles with broker-import numbers; wrong-password handled gracefully; confirm the PDF
+  and password are never persisted; broker import still works unchanged.
