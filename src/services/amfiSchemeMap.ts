@@ -103,7 +103,7 @@ export async function getAmfiSchemeData(): Promise<{
   schemeToNav: Record<string, { nav: number; date: string }>;
 }> {
   const cached = await getMeta<AmfiSchemeCache>(CACHE_KEY);
-  if (isFresh(cached)) {
+  if (cached && isFresh(cached)) {
     return { nameToScheme: cached.name_to_scheme, schemeToNav: cached.scheme_to_nav };
   }
 

@@ -136,7 +136,7 @@ export function deriveHoldings(
       };
     });
 
-  const mfHoldings = mfPortfolioHoldings.map((holding) => {
+  const mfHoldings = mfPortfolioHoldings.map((holding): Holding => {
     const quote = holding.scheme_code ? quotes.get(String(holding.scheme_code)) : undefined;
     const price = quote?.price ?? (holding.units > 0 ? holding.current_value / holding.units : 0);
     const currentValue = holding.units * price;

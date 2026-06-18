@@ -45,7 +45,7 @@ async function fetchNseIsinMap(): Promise<Record<string, string>> {
 
 export async function getNseIsinMap(): Promise<Record<string, string>> {
   const cached = await getMeta<NseIsinMapCache>(CACHE_KEY);
-  if (isFresh(cached)) {
+  if (cached && isFresh(cached)) {
     return cached.map;
   }
 

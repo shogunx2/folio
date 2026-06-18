@@ -12,12 +12,6 @@ function toQuoteMap(quotes: PriceQuote[]): Map<string, PriceQuote> {
   return new Map(quotes.map((quote) => [quote.isin, quote]));
 }
 
-function getEquitySymbols(transactions: Transaction[]): string[] {
-  return transactions
-    .filter((txn) => txn.asset_type === 'equity' || txn.asset_type === 'etf')
-    .map((txn) => txn.symbol);
-}
-
 function isLikelyTicker(symbol: string): boolean {
   return /^[A-Z0-9.&-]+(\.(NS|BO))?$/.test(symbol) && !symbol.includes(' ');
 }
@@ -35,10 +29,6 @@ function getMfSchemeCodes(transactions: Transaction[]): string[] {
     .filter((txn) => txn.asset_type === 'mutual_fund')
     .map((txn) => txn.isin)
     .filter((isin) => !isin.startsWith('MFC_'));
-}
-
-function getMfCentralTransactions(transactions: Transaction[]): Transaction[] {
-  return transactions.filter((txn) => txn.asset_type === 'mutual_fund' && txn.isin.startsWith('MFC_'));
 }
 
 export async function importAndNormalize(platform: Platform, fileBuffer: ArrayBuffer): Promise<ImportSummary> {
