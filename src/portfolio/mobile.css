@@ -472,6 +472,7 @@
   max-width: 472px;
   max-height: 92vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--paper);
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -20px 60px -20px var(--shadow);
@@ -516,20 +517,6 @@
   align-items: center;
   gap: 7px;
 }
-.close-btn {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 1px solid var(--hair);
-  background: transparent;
-  color: var(--muted3);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.close-btn:hover { color: var(--ink); border-color: var(--accent-border); }
-
 .price-block { display: flex; flex-direction: column; gap: 6px; }
 .price-value {
   margin: 0;

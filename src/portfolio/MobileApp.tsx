@@ -1,8 +1,8 @@
+import { useEffect } from 'react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 import './mobile.css';
 import { usePortfolio } from './usePortfolio';
 import {
-  CloseIcon,
   HomeIcon,
   ListIcon,
   MoonIcon,
@@ -355,6 +355,32 @@ function ImportView({ vm }: { vm: ReturnType<typeof usePortfolio> }) {
 
 function DetailSheet({ vm }: { vm: ReturnType<typeof usePortfolio> }) {
   const holding = vm.selectedHolding;
+
+  // Lock the page behind the sheet so touch scrolling can't bleed through to
+  // the holdings list. position:fixed is the iOS-Safari-safe lock; we preserve
+  // and restore the scroll position on close.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const { body } = document;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   if (!holding) return null;
 
   return (
@@ -389,9 +415,6 @@ function DetailSheet({ vm }: { vm: ReturnType<typeof usePortfolio> }) {
                   : `NSE · ${formatEquitySymbol(holding.symbol)}`}
               </p>
             </div>
-            <button type="button" className="close-btn" onClick={vm.closeDetail} aria-label="Close">
-              <CloseIcon />
-            </button>
           </header>
 
           <section className="price-block">
